@@ -1,5 +1,6 @@
 ﻿using DataAccess.Context;
 using Entities.Concrete;
+using Microsoft.AspNetCore.Identity;
 using WebMVC.CustomValidations;
 using WebMVC.Localizations;
 
@@ -9,6 +10,14 @@ namespace WebMVC.Extensions
     {
         public static void AddIdentityWithExtension(this IServiceCollection services)
         {
+
+            // Oluşturulacak PasswordResetToken gibi tokenların süresini belirliyoruz.
+            services.Configure<DataProtectionTokenProviderOptions>(opt =>
+            {
+                opt.TokenLifespan = TimeSpan.FromHours(2);
+            });
+
+
             //Identity ekliyorum. Ayrıca hangi DbContext i kullanacağını ekliyorum.
             services.AddIdentity<AppUser, AppRole>(options =>
             {
@@ -30,6 +39,7 @@ namespace WebMVC.Extensions
 
             }).AddPasswordValidator<PasswordValidator>()
               .AddErrorDescriber<LocalizationIdentityErrorDescriber>()
+              .AddDefaultTokenProviders() // Password Resetlerken token üretip doğrulamaya yarıyor.
               .AddEntityFrameworkStores<AppDbContext>();
 
         }

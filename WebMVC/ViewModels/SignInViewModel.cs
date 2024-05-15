@@ -20,11 +20,12 @@ namespace WebMVC.ViewModels
         [Display(Name = "Email :")]
         public string Email { get; set; }
 
+        [DataType(DataType.Password)]
         [Required(ErrorMessage = "Şifre alanı boş bırakılamaz.")]
         [Display(Name = "Şifre :")]
         public string Password { get; set; }
 
-        [Display(Name = "Beni Hatırla :")]
+        [Display(Name = "Beni Hatırla ")]
         public bool RememberMe { get; set; }
     }
 }

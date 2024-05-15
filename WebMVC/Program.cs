@@ -1,7 +1,10 @@
 using DataAccess.Context;
 using Entities.Concrete;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebMVC.Extensions;
+using WebMVC.OptionsModel;
+using WebMVC.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +19,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 //builder.Services.AddIdentity<AppUser, AppRole>().AddEntityFrameworkStores<AppDbContext>();
 
+// Burada EmailSettings class ýndaki propertilerle appsettings deki EmailSettings deðerlerini eþliyoruz.
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
 builder.Services.AddIdentityWithExtension();
+
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Cookie ayarlarýný burada yapýyoruz.
 builder.Services.ConfigureApplicationCookie(opt =>
