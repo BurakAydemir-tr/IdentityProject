@@ -9,7 +9,10 @@ namespace Entities.Concrete
 {
     public class AppUser : IdentityUser<int>
     {
-        public Gender Gender { get; set; }
-        public DateTime CreatedOn { get; set; }
+        public Gender? Gender { get; set; }
+        public string? Picture { get; set; }
+        public DateTime? BirthDate { get; set; }
+        public DateTime? CreatedOn { get; set; }
+        
     }
 }

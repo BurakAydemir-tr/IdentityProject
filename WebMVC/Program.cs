@@ -2,6 +2,7 @@ using DataAccess.Context;
 using Entities.Concrete;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using WebMVC.Extensions;
 using WebMVC.OptionsModel;
 using WebMVC.Services;
@@ -23,6 +24,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
 builder.Services.AddIdentityWithExtension();
+
+//Dosya iþlmeleri için kullanýlýyor. Directory.GetCurrentDirectory diyerek projedeki tüm klasörlere eriþebiliyoruz. Bunun için IFileProvider arayüzünü enjekte etmek gerekiyor.
+builder.Services.AddSingleton<IFileProvider>(new PhysicalFileProvider(Directory.GetCurrentDirectory()));
 
 builder.Services.AddScoped<IEmailService, EmailService>();
 

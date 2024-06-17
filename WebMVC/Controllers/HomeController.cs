@@ -48,6 +48,11 @@ namespace WebMVC.Controllers
         [HttpPost]
         public async Task<IActionResult> SignIn(SignInViewModel request, string? returnUrl=null)
         {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
+
             /* returnUrl Kişi kullanıcılara ait bir yere girmeye çalıştığında returnUrl ile girmeye çalıştıtğı yeri tutup login oldujktan sonra oraya yönlendiriyoruz.*/
             returnUrl = returnUrl ?? Url.Action("Index", "Home");
 

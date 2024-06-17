@@ -23,6 +23,7 @@ namespace WebMVC.ViewModels
         [DataType(DataType.Password)]
         [Required(ErrorMessage = "Şifre alanı boş bırakılamaz.")]
         [Display(Name = "Şifre :")]
+        [MinLength(6, ErrorMessage = "Şifreniz en az 6 karakter olabilir")]
         public string Password { get; set; }
 
         [Display(Name = "Beni Hatırla ")]
