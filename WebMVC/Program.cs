@@ -37,7 +37,7 @@ builder.Services.ConfigureApplicationCookie(opt =>
     cookieBuilder.Name = "UdemyAppCookie"; // Cookie ye bir isim veriyoruz.
     opt.LoginPath = new PathString("/Home/Signin"); //eriþmemesi gereken yerlere girmeye çalýþtýðýnda login sayfasýna yönlendiriyor.
     opt.LogoutPath = new PathString("/Member/Logout");
-
+    opt.AccessDeniedPath = new PathString("/Member/AccessDenied");
     opt.Cookie = cookieBuilder;
     opt.ExpireTimeSpan = TimeSpan.FromDays(60); // Cookie nin geçerlilik süresi 60 gün ayarlýyoruz.
     opt.SlidingExpiration = true; // Cookie yi sürekli muhafaza etmek için

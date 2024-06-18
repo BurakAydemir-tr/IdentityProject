@@ -1,0 +1,37 @@
+﻿
+@{
+    ViewData["Title"] = "AssignRoleToUser";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+@model List<AdminModel.AssignRoleToUserViewModel>
+
+<h1>AssignRoleToUser</h1>
+
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <h2>Kullanıcıya Rol Atama</h2>
+        <form asp-action="AssignRoleToUser" asp-route-userId="@ViewBag.userId" method="post">
+            
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" asp-for="@Model[i].Exist">
+                    <label class="form-check-label" for="exampleCheck1">@Model[i].Name</label>
+                    <input type="hidden" asp-for="@Model[i].Name"/>
+                    <input type="hidden" asp-for="@Model[i].Id"/>
+                </div>
+            }
+
+            <div class="form-group mt-3">
+                <button type="submit" class="btn btn-primary">Rol Ata</button>
+            </div>
+
+        </form>
+
+        <div class="mt-3">
+            <a asp-controller="Home" asp-action="UserList">Kullanıcı Listesine geri dön</a>
+        </div>
+    </div>
+
+
+</div>
