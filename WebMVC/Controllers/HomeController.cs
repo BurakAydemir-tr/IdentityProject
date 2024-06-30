@@ -6,6 +6,7 @@ using WebMVC.Models;
 using WebMVC.ViewModels;
 using WebMVC.Extensions;
 using WebMVC.Services;
+using System.Security.Claims;
 
 namespace WebMVC.Controllers
 {
@@ -71,22 +72,31 @@ namespace WebMVC.Controllers
              */
             var signInResult = await _signInManager.PasswordSignInAsync(hasUser, request.Password, request.RememberMe, true);
 
-            if (signInResult.Succeeded)
-            {
-                return Redirect(returnUrl);
-            }
-
             // Hesap kilitlenmişse ekrana döndürülecek uyarı burda işleniyor.
             if (signInResult.IsLockedOut)
             {
-                ModelState.AddModelErrorList(new List<string>() {"3 dakika boyunca giriş yapamazsınız." });
+                ModelState.AddModelErrorList(new List<string>() { "3 dakika boyunca giriş yapamazsınız." });
                 return View();
             }
 
-            ModelState.AddModelErrorList(new List<string>() { $"Email veya şifre yanlış",
+            if (!signInResult.Succeeded)
+            {
+                ModelState.AddModelErrorList(new List<string>() { $"Email veya şifre yanlış",
                                             $"Başarısız giriş sayısı = {await _userManager.GetAccessFailedCountAsync(hasUser)}"});
 
-            return View();
+                return View();   
+            }
+
+            //Doğum tarihini olup olmadığını kontrol ediyoruz.
+            if (hasUser.BirthDate.HasValue)
+            {
+                /*Doğum tarihi varsa cookie ye birthdate claimi ve değerini ekliyoruz.
+                 Bunu claim i yaşa bağlı olarak bazı sayfalara erişim izni vereceğiz yada vermeyeceğiz.*/
+                await _signInManager.SignInWithClaimsAsync(hasUser, request.RememberMe,
+                    new[] { new Claim("birthdate", hasUser.BirthDate.Value.ToString())});
+            }
+
+            return Redirect(returnUrl);
         }
 
         [HttpPost]
@@ -107,16 +117,29 @@ namespace WebMVC.Controllers
             }, request.Password);
 
 
-            if (identityResult.Succeeded)
+            if (!identityResult.Succeeded)
             {
-                TempData["SuccessMessage"] = "Üyelik işlemi başarıyla gerçekleşmiştir.";
-                return RedirectToAction(nameof(HomeController.SignUp));
+                ModelState.AddModelErrorList(identityResult.Errors.Select(x => x.Description).ToList());
+                return View();
+            }
+
+            /*Bir sayfaya belirli bir süre erişmek için User Claim ekleme*/
+            //Borsa sayfası için 10 günlüğüne erişebilecek bir claim oluşturuyoruz.
+            var exchangeExpireClaim = new Claim("ExchangeExpireDate", DateTime.Now.AddDays(10).ToString());
+            var user = await _userManager.FindByNameAsync(request.UserName);
+            //Oluşturulan claim i UserClaims tablosuna ekliyoruz.
+            var claimResult = await _userManager.AddClaimAsync(user, exchangeExpireClaim);
+
+            if (!claimResult.Succeeded)
+            {
+                ModelState.AddModelErrorList(identityResult.Errors.Select(x => x.Description).ToList());
+                return View();
             }
 
 
-            ModelState.AddModelErrorList(identityResult.Errors.Select(x => x.Description).ToList());
-            
-            return View();
+            TempData["SuccessMessage"] = "Üyelik işlemi başarıyla gerçekleşmiştir.";
+            return RedirectToAction(nameof(HomeController.SignUp));
+
         }
 
 

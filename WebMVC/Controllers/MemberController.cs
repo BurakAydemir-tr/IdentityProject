@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.FileProviders;
+using System.Collections.Generic;
+using System.Security.Claims;
 using WebMVC.Extensions;
 using WebMVC.ViewModels;
 
@@ -115,9 +117,9 @@ namespace WebMVC.Controllers
             currentUser.PhoneNumber = request.Phone;
             currentUser.BirthDate = request.BirthDate;
             currentUser.Gender = request.Gender;
-            
 
-            if (request.Picture != null && request.Picture.Length > 0) 
+
+            if (request.Picture != null && request.Picture.Length > 0)
             {
                 //wwwroot klasörünün dosya yoluna erişiyoruz.
                 var wwwrootFolder = _fileProvider.GetDirectoryContents("wwwroot");
@@ -149,7 +151,19 @@ namespace WebMVC.Controllers
              Başka cihazlardan giriş yaparken tekrar login olmak zorunda kalsın*/
             await _userManager.UpdateSecurityStampAsync(currentUser);
             await _signInManager.SignOutAsync();
-            await _signInManager.SignInAsync(currentUser, true);
+
+            /*Doğum tarihi girilmişse birtdate claim i olşuturup doğum tarihini bu claim e ekliyoruz.
+             Bu claim ile SignInWithClaimsAsync yaparak tekrar login olmasını sağlıyoruz.
+            Bu claim i bazı sayfalara erişim yaparken yaş kontrolu yapacağız.*/
+            if (request.BirthDate.HasValue)
+            {
+                await _signInManager.SignInWithClaimsAsync(currentUser, true,
+                    new[] { new Claim("birthdate", currentUser.BirthDate.Value.ToString()) });
+            }
+            else
+            {
+                await _signInManager.SignInAsync(currentUser, true);
+            }
 
             TempData["SuccessMessage"] = "Üye bilgileri başarıyla değiştirilmiştir.";
 
@@ -190,6 +204,33 @@ namespace WebMVC.Controllers
 
             message = "Bu sayfayı görmeye yetkiniz yoktur. Yetki almak için yöneticiniz ile görüşebilirsiniz.";
             ViewBag.message = message;
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult Claims()
+        {
+            var userClaimList = User.Claims.Select(x => new ClaimViewModel()
+            {
+                Issuer = x.Issuer,
+                Type = x.Type,
+                Value = x.Value
+            }).ToList();
+
+            return View(userClaimList);
+        }
+
+        [Authorize(Policy = "ExchangePolicy")]
+        [HttpGet]
+        public IActionResult ExchangePage()
+        {
+            return View();
+        }
+
+        [Authorize(Policy = "ViolencePolicy")]
+        [HttpGet]
+        public IActionResult ViolencePage()
+        {
             return View();
         }
     }

@@ -1,10 +1,14 @@
 using DataAccess.Context;
 using Entities.Concrete;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using WebMVC.Extensions;
 using WebMVC.OptionsModel;
+using WebMVC.PermissionsRoot;
+using WebMVC.Requirements;
+using WebMVC.Seeds;
 using WebMVC.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +33,46 @@ builder.Services.AddIdentityWithExtension();
 builder.Services.AddSingleton<IFileProvider>(new PhysicalFileProvider(Directory.GetCurrentDirectory()));
 
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IAuthorizationHandler, ExchangeExpireRequirementHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, ViolenceRequirementHandler>();
+
+//Authorization ve policy ile ilgili ayarlarý burada yapýyoruz.
+builder.Services.AddAuthorization(options =>
+{
+    //ExchangePolicy adýnda bir policy ekliyoruz. Bu policy için gereken iþ kuralý requirement olarak ekleniyor.
+    options.AddPolicy("ExchangePolicy", poicy => 
+    {
+        poicy.AddRequirements(new ExchangeExpireRequirement());
+    });
+
+    //Þiddet içeren içeriklere eriþimi kýsýtlamak için ViolencePolicy ekliyoruz. Bu policy için gereken iþ kuralý requirement olarak ekleniyor. Sýnýr olarak ThresholdAge deðiþkeni tanýmlanýyor ve bu deðiþkene sýnýr yaþý veriliyor.
+    options.AddPolicy("ViolencePolicy", poicy =>
+    {
+        poicy.AddRequirements(new ViolenceRequirement() { ThresholdAge = 18});
+    });
+
+    options.AddPolicy("OrderPermissionReadAndDelete", poicy =>
+    {
+        poicy.RequireClaim("Permission", Permissions.Order.Read);
+        poicy.RequireClaim("Permission", Permissions.Order.Delete);
+        poicy.RequireClaim("Permission", Permissions.Stock.Delete);
+    });
+
+    options.AddPolicy("Permissions.Order.Read", poicy =>
+    {
+        poicy.RequireClaim("Permission", Permissions.Order.Read);
+    });
+
+    options.AddPolicy("Permissions.Order.Delete", poicy =>
+    {
+        poicy.RequireClaim("Permission", Permissions.Order.Delete);
+    });
+
+    options.AddPolicy("Permissions.Stock.Delete", poicy =>
+    {
+        poicy.RequireClaim("Permission", Permissions.Stock.Delete);
+    });
+});
 
 // Cookie ayarlarýný burada yapýyoruz.
 builder.Services.ConfigureApplicationCookie(opt =>
@@ -44,6 +88,15 @@ builder.Services.ConfigureApplicationCookie(opt =>
 });
 
 var app = builder.Build();
+
+// Program ayaða kaltýðýnda bir scope oluþturulacak 
+using(var scope = app.Services.CreateScope())
+{
+    //GetRequiredService metodu ile roleManager ý alýyoruz.
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
+    //Seed datayý program çalýþýnca çalýþtýrýp veritabanýna kaydediyoruz.
+    await PermissionSeed.Seed(roleManager);
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
